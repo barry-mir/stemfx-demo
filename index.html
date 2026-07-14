@@ -3,132 +3,435 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mixing Style Transfer — Supplementary Audio</title>
+<title>StemFX — Learning Mixing Style Representations via Autoregressive FX Chain Prediction</title>
+<meta name="description" content="Audio demo page for StemFX (ISMIR 2026): learning mixing style representations via autoregressive FX chain prediction on source-separated stems.">
 <style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f7f8fa;
+    --bg-card: #ffffff;
+    --border: #e3e6eb;
+    --border-strong: #cfd4dc;
+    --text: #1a1d23;
+    --text-soft: #5b6270;
+    --text-faint: #8b929e;
+    --accent: #2563eb;
+    --accent-soft: #eff4ff;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(16,24,40,.05);
+    --radius: 12px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1116;
+      --bg-soft: #151a21;
+      --bg-card: #161b22;
+      --border: #262c36;
+      --border-strong: #363d49;
+      --text: #e6e9ef;
+      --text-soft: #9aa3b2;
+      --text-faint: #6e7683;
+      --accent: #6ea8fe;
+      --accent-soft: #172033;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    }
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-         max-width: 1400px; margin: 0 auto; padding: 20px 16px; color: #222; line-height: 1.5; }
-  h1 { font-size: 1.5em; margin-bottom: 4px; }
-  h2 { font-size: 1.2em; margin-top: 30px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 4px; }
-  .subtitle { color: #666; font-size: 0.92em; margin-bottom: 16px; }
-  .note { background: #f5f5f5; border-left: 3px solid #999; padding: 8px 12px; margin: 10px 0; font-size: 0.85em; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
 
-  /* Paired: 2-col grid */
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+  /* ---------- Hero ---------- */
+  header {
+    background: linear-gradient(180deg, var(--bg-soft), var(--bg));
+    border-bottom: 1px solid var(--border);
+    padding: 56px 0 36px;
+    text-align: center;
+  }
+  .venue {
+    display: inline-block; font-size: .74rem; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--accent);
+    background: var(--accent-soft); border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 999px; margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 3.4vw, 2.35rem); line-height: 1.25; font-weight: 750;
+    letter-spacing: -.02em; margin-bottom: 8px;
+  }
+  h1 .brand { color: var(--accent); }
+  .tagline { color: var(--text-soft); font-size: 1.02rem; max-width: 760px; margin: 0 auto 22px; }
+  .authors { font-size: .95rem; margin-bottom: 4px; }
+  .authors a { color: var(--text); text-decoration: none; }
+  .authors sup { color: var(--accent); font-weight: 700; }
+  .affil { font-size: .84rem; color: var(--text-faint); margin-bottom: 24px; }
 
-  /* Cards */
-  .card { border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; background: #fafafa; }
-  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  .card-title { font-weight: 700; font-size: 0.95em; color: #333; }
-  .card table { width: 100%; border-collapse: collapse; }
-  .card td { padding: 3px 6px; font-size: 0.84em; vertical-align: middle; }
-  .card td:first-child { font-weight: 600; white-space: nowrap; width: 115px; color: #555; }
-  .card audio { width: 100%; height: 30px; }
+  .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 999px; font-size: .9rem; font-weight: 600;
+    text-decoration: none; border: 1px solid var(--border-strong);
+    background: var(--bg-card); color: var(--text);
+    transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    box-shadow: var(--shadow);
+  }
+  .btn:hover { transform: translateY(-1px); border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { color: #fff; opacity: .92; }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
 
-  /* Unpaired: full-width rows */
-  .pair-row { border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; background: #fafafa; margin-top: 12px; }
-  .pair-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .pair-row-title { font-weight: 700; font-size: 0.95em; color: #333; }
-  .pair-row .directions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .dir-block {}
-  .dir-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .dir-label { font-weight: 600; font-size: 0.85em; color: #444; }
-  .dir-block table { width: 100%; border-collapse: collapse; }
-  .dir-block td { padding: 2px 4px; font-size: 0.82em; vertical-align: middle; }
-  .dir-block td:first-child { font-weight: 600; white-space: nowrap; width: 105px; color: #555; }
-  .dir-block audio { width: 100%; height: 28px; }
-  @media (max-width: 900px) { .pair-row .directions { grid-template-columns: 1fr; } }
+  /* ---------- Sections ---------- */
+  section { padding: 44px 0 8px; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em;
+    display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: .8rem; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .lede { color: var(--text-soft); font-size: .95rem; margin-bottom: 18px; max-width: 900px; }
+  .rule { height: 1px; background: var(--border); margin: 14px 0 22px; }
 
-  /* Chain toggle button */
-  .chain-btn { font-size: 0.78em; padding: 3px 8px; cursor: pointer; border: 1px solid #aaa;
-               border-radius: 3px; background: #fff; color: #555; white-space: nowrap; }
-  .chain-btn:hover { background: #eee; }
+  .abstract {
+    background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 26px; font-size: .95rem; color: var(--text-soft);
+  }
+  .abstract p + p { margin-top: 12px; }
+  .abstract strong { color: var(--text); font-weight: 650; }
+  code, .kbd { font-family: var(--mono); font-size: .87em; background: var(--bg-soft);
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
 
-  /* Chain panel */
-  .chain-panel { display: none; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px; }
+  /* Highlight stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+  @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: var(--shadow);
+  }
+  .stat .v { font-size: 1.5rem; font-weight: 750; letter-spacing: -.02em; color: var(--accent); }
+  .stat .k { font-size: .78rem; color: var(--text-faint); margin-top: 2px; line-height: 1.4; }
+
+  /* Results table */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  table.results { width: 100%; border-collapse: collapse; font-size: .9rem; background: var(--bg-card); }
+  table.results th, table.results td { padding: 10px 14px; text-align: right; white-space: nowrap; }
+  table.results th:first-child, table.results td:first-child { text-align: left; }
+  table.results thead th {
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-faint); background: var(--bg-soft); border-bottom: 1px solid var(--border);
+    font-weight: 700;
+  }
+  table.results tbody td { border-bottom: 1px solid var(--border); color: var(--text-soft); }
+  table.results tbody tr.ours td { background: var(--accent-soft); color: var(--text); font-weight: 650; }
+  table.results tbody tr.anchor td { color: var(--text-faint); font-style: italic; }
+  .tbl-note { font-size: .8rem; color: var(--text-faint); margin-top: 8px; }
+
+  /* ---------- Audio grids ---------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 980px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .card, .pair-row {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--bg-card); box-shadow: var(--shadow);
+    padding: 14px 16px 12px;
+  }
+  .pair-row { margin-bottom: 14px; }
+  .card-header, .pair-row-header, .dir-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .card-header, .pair-row-header { margin-bottom: 10px; }
+  .card-title, .pair-row-title { font-weight: 700; font-size: .95rem; letter-spacing: -.01em; }
+  .song { font-size: .78rem; color: var(--text-faint); font-weight: 500; }
+
+  .card table, .dir-block table { width: 100%; border-collapse: collapse; }
+  .card td, .dir-block td { padding: 4px 0; font-size: .84rem; vertical-align: middle; }
+  .card td:first-child, .dir-block td:first-child {
+    font-weight: 600; white-space: nowrap; width: 128px; color: var(--text-soft); padding-right: 10px;
+  }
+  .card tr.hl td:first-child, .dir-block tr.hl td:first-child { color: var(--accent); }
+  .card tr.ref td:first-child, .dir-block tr.ref td:first-child { color: var(--text-faint); font-weight: 500; }
+  audio { width: 100%; height: 32px; display: block; }
+  @media (prefers-color-scheme: dark) { audio { filter: invert(.92) hue-rotate(180deg); } }
+
+  .pair-row .directions { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 980px) { .pair-row .directions { grid-template-columns: 1fr; } }
+  .dir-header { margin-bottom: 6px; }
+  .dir-label {
+    font-weight: 700; font-size: .8rem; color: var(--accent);
+    background: var(--accent-soft); border-radius: 6px; padding: 2px 8px;
+  }
+
+  /* Chain toggle */
+  .chain-btn {
+    font-size: .76rem; font-weight: 600; padding: 4px 10px; cursor: pointer;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    background: transparent; color: var(--text-soft); white-space: nowrap;
+    transition: all .12s ease; font-family: inherit;
+  }
+  .chain-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .chain-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .chain-panel { display: none; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
   .chain-panel.open { display: block; }
-  .method-tabs { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
-  .method-tab { font-size: 0.78em; padding: 3px 8px; cursor: pointer; border: 1px solid #ccc;
-                border-radius: 3px; background: #f0f0f0; color: #444; }
-  .method-tab.active { background: #333; color: #fff; border-color: #333; }
-  .method-tab:hover { background: #ddd; }
-  .method-tab.active:hover { background: #555; }
+  .method-tabs { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+  .method-tab {
+    font-size: .75rem; font-weight: 600; padding: 3px 9px; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: var(--bg-soft); color: var(--text-soft); transition: all .12s ease;
+  }
+  .method-tab:hover { border-color: var(--border-strong); color: var(--text); }
+  .method-tab.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-  /* Signal chain diagram */
-  .chain-diagram { display: none; overflow-x: auto; padding: 6px 0; }
+  .chain-diagram { display: none; overflow-x: auto; padding: 4px 0 2px; }
   .chain-diagram.active { display: block; }
-  .stem-row { display: flex; align-items: center; margin-bottom: 4px; }
-  .stem-label { font-weight: 700; font-size: 0.75em; width: 55px; color: #666; flex-shrink: 0; }
-  .blocks { display: flex; gap: 3px; flex-wrap: wrap; }
-  .fx-block { display: inline-block; padding: 3px 7px; border-radius: 3px; font-size: 0.72em;
-              font-weight: 600; cursor: default; position: relative; white-space: nowrap; }
-  .fx-block.eq { background: #dbeafe; color: #1e40af; border: 1px solid #93bbfd; }
-  .fx-block.dynamics { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
-  .fx-block.distortion { background: #fecaca; color: #991b1b; border: 1px solid #f87171; }
-  .fx-block.modulation { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
-  .fx-block.delay { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-  .fx-block.reverb { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
-  .fx-block.stereo { background: #fce7f3; color: #9d174d; border: 1px solid #f9a8d4; }
-  .fx-block.spectral { background: #e0f2fe; color: #0c4a6e; border: 1px solid #7dd3fc; }
-  .fx-block.noise { background: #f3f4f6; color: #374151; border: 1px solid #9ca3af; }
-  .fx-block.other { background: #f3f4f6; color: #374151; border: 1px solid #9ca3af; }
-  .fx-block.pitch { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
-  .fx-block.time { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
-  .no-fx { font-size: 0.72em; color: #999; font-style: italic; }
+  .stem-row { display: flex; align-items: flex-start; margin-bottom: 6px; }
+  .stem-label {
+    font-weight: 700; font-size: .72rem; width: 58px; color: var(--text-faint);
+    flex-shrink: 0; text-transform: uppercase; letter-spacing: .04em; padding-top: 4px;
+  }
+  .blocks { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .fx-block {
+    display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: .72rem;
+    font-weight: 600; cursor: default; position: relative; white-space: nowrap;
+    font-family: var(--mono);
+  }
+  .fx-block.eq         { background:#dbeafe; color:#1e40af; border:1px solid #93bbfd; }
+  .fx-block.dynamics   { background:#fef3c7; color:#92400e; border:1px solid #fbbf24; }
+  .fx-block.distortion { background:#fecaca; color:#991b1b; border:1px solid #f87171; }
+  .fx-block.modulation { background:#e0e7ff; color:#3730a3; border:1px solid #a5b4fc; }
+  .fx-block.delay      { background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; }
+  .fx-block.reverb     { background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd; }
+  .fx-block.stereo     { background:#fce7f3; color:#9d174d; border:1px solid #f9a8d4; }
+  .fx-block.spectral   { background:#e0f2fe; color:#0c4a6e; border:1px solid #7dd3fc; }
+  .fx-block.noise, .fx-block.other { background:#f3f4f6; color:#374151; border:1px solid #9ca3af; }
+  .fx-block.pitch, .fx-block.time  { background:#fff7ed; color:#9a3412; border:1px solid #fdba74; }
+  .no-fx { font-size: .72rem; color: var(--text-faint); font-style: italic; }
 
-  /* Tooltip */
-  .fx-tooltip { display: none; position: fixed; z-index: 1000;
-                background: #222; color: #eee; padding: 6px 10px; border-radius: 4px;
-                font-size: 0.82em; font-weight: 400; white-space: pre; min-width: 180px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3); pointer-events: none; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .legend .fx-block { cursor: default; }
 
-  .footer { margin-top: 36px; padding-top: 12px; border-top: 1px solid #ddd; font-size: 0.82em; color: #888; }
+  .fx-tooltip {
+    display: none; position: fixed; z-index: 1000;
+    background: #11141a; color: #e6e9ef; padding: 8px 11px; border-radius: 8px;
+    font-family: var(--mono); font-size: .74rem; font-weight: 400; white-space: pre;
+    min-width: 190px; box-shadow: 0 8px 24px rgba(0,0,0,.35); pointer-events: none;
+    border: 1px solid #2a2f3a;
+  }
+
+  .arrow { color: var(--text-faint); font-size: .7rem; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 56px; border-top: 1px solid var(--border); background: var(--bg-soft);
+    padding: 28px 0; font-size: .85rem; color: var(--text-faint);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .cite {
+    font-family: var(--mono); font-size: .76rem; line-height: 1.6; color: var(--text-soft);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; margin: 12px 0 16px; overflow-x: auto; white-space: pre;
+  }
 </style>
 </head>
 <body>
 
-<h1>Mixing Style Transfer with FX Chain Prediction</h1>
-<p class="subtitle">Supplementary audio examples</p>
-<div class="note">
-  <b>Headphones recommended.</b> All audio loudness-normalized to &minus;23 LUFS.
-  Click <b>Show FX Chain</b> to inspect the predicted signal chain for each method.
+<header>
+  <div class="wrap">
+    <span class="venue">ISMIR 2026 · Abu Dhabi, UAE</span>
+    <h1><span class="brand">StemFX</span>: Learning Mixing Style Representations via<br>Autoregressive FX Chain Prediction on Source-Separated Stems</h1>
+    <p class="tagline">
+      A Transformer decoder predicts variable-length, tokenized FX chains per stem — human-readable, editable, and
+      over 4000&times; faster than inference-time optimization.
+    </p>
+    <p class="authors">
+      Yuan-Chiao Cheng<sup>1</sup>, Jui-Te Wu<sup>1</sup>, Brian Chen<sup>1</sup>,
+      Yen-Tung Yeh<sup>2</sup>, Yu-Hua Chen<sup>2</sup>, Yi-Hsuan Yang<sup>2</sup>
+    </p>
+    <p class="affil"><sup>1</sup>Independent Researcher &nbsp;&nbsp; <sup>2</sup>National Taiwan University, Taiwan</p>
+    <div class="links">
+      <a class="btn primary" href="https://github.com/barry-mir/stemfx" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Code
+      </a>
+      <a class="btn" href="https://github.com/barry-mir/multiafx" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        MultiAFx Toolkit
+      </a>
+      <a class="btn" href="#paired">Listen</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Abstract -->
+  <section id="abstract">
+    <h2><span class="num">01</span> Abstract</h2>
+    <div class="rule"></div>
+    <div class="abstract">
+      <p>
+        Audio mixing style encompasses the artistic and technical decisions a mix engineer makes, including level
+        balancing, spatialization, and the choice, ordering, and parameterization of audio effects (FX) on each stem.
+        FX chains are a key determinant of this style, yet existing approaches to modeling them remain limited. Some
+        operate on stereo mixtures without explicit per-stem FX chain modeling, others fix the number or type of
+        effects per track, and many require differentiable effect implementations or scarce multitrack datasets.
+      </p>
+      <p>
+        We present <strong>StemFX</strong>, a framework that learns mixing style representations by autoregressively
+        predicting variable-length FX chains on source-separated stems. A Transformer decoder predicts tokenized FX
+        chains autoregressively, while a band-split multi-band CNN encoder with FiLM conditioning captures per-stem
+        spectral structure. To enable large-scale paired training, we extract pseudo-stems from about 105K songs via
+        source separation and augment them using <strong>MultiAFx</strong>, a toolkit unifying 85 audio effects from 7
+        Python libraries. Evaluated on mixing style retrieval, StemFX outperforms all baseline models across all tested
+        chain lengths. On paired mixing style transfer, StemFX achieves the best spectral fidelity and the highest
+        listener preference, over 4000 times faster than iterative optimization.
+      </p>
+      <div class="stats">
+        <div class="stat"><div class="v">86.8%</div><div class="k">Top-1 retrieval @ 8 effects<br>(vs. 38.0% Fx-Encoder++)</div></div>
+        <div class="stat"><div class="v">0.24s</div><div class="k">Inference per example<br>&gt;4000&times; faster than ITO</div></div>
+        <div class="stat"><div class="v">60.6</div><div class="k">MUSHRA score, real mixes<br>highest listener preference</div></div>
+        <div class="stat"><div class="v">105K</div><div class="k">Songs of paired training data<br>via the Sep-Aug Pipeline</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Method -->
+  <section id="method">
+    <h2><span class="num">02</span> How it works</h2>
+    <div class="rule"></div>
+    <p class="lede">
+      The original and target stems (vocals, bass, drums, other) pass through a shared <strong>BSFiLM Encoder</strong>
+      — a band-split multi-band CNN with FiLM conditioning on 64 hand-crafted mixing features. The two embeddings are
+      projected into conditioning vectors that a 6-layer Transformer decoder attends to via cross-attention, then
+      autoregressively emits the FX chain as a token sequence over a 358-token vocabulary (effect names, parameter
+      names, quantized value bins). The output is human-readable and directly executable, e.g.
+      <code>sox_compand → threshold=−20 dB, ratio=4:1 → sox_reverb → decay=1.5 s</code>.
+      Total model size is 28.0M parameters.
+    </p>
+  </section>
+
+  <!-- Results -->
+  <section id="results">
+    <h2><span class="num">03</span> Paired mixing style transfer results</h2>
+    <div class="rule"></div>
+    <p class="lede">
+      MUSHRA score is the mean rating from 20 listeners on a 0–100 similarity scale, collected on the Real Mix set.
+      StemFX forced and both ITO methods share the same fixed universal signal chain.
+    </p>
+    <div class="table-scroll">
+      <table class="results">
+        <thead>
+          <tr>
+            <th rowspan="2">Method</th>
+            <th>Synth.</th>
+            <th colspan="2">Real Mix</th>
+            <th rowspan="2">Time</th>
+          </tr>
+          <tr>
+            <th>MRSTFT ↓</th>
+            <th>MRSTFT ↓</th>
+            <th>MUSHRA ↑</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="ours"><td>StemFX (ours)</td><td>2.35</td><td>1.44</td><td>60.6</td><td>0.24 s</td></tr>
+          <tr><td>StemFX forced</td><td>3.12</td><td>2.10</td><td>25.3</td><td>1.91 s</td></tr>
+          <tr><td>ITO + AFx-Rep</td><td>3.71</td><td>2.53</td><td>30.6</td><td>1033 s</td></tr>
+          <tr><td>ITO + BSFiLM</td><td>2.89</td><td>2.06</td><td>19.9</td><td>1717 s</td></tr>
+          <tr class="anchor"><td>Target mix (high anchor)</td><td>0.00</td><td>0.00</td><td>96.6</td><td>—</td></tr>
+          <tr class="anchor"><td>FX-normalized (low anchor)</td><td>3.38</td><td>1.49</td><td>54.9</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tbl-note">
+      On mixing style retrieval, StemFX reaches 86.8% Top-1 and 0.903 MRR at 8 effects, versus 38.0% Top-1 and 0.459 MRR
+      for Fx-Encoder++. See the paper for the full retrieval, ablation, and dataset-scale results.
+    </p>
+  </section>
+
+  <!-- Paired -->
+  <section id="paired">
+    <h2><span class="num">04</span> Paired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— same content, different mix</span></h2>
+    <div class="rule"></div>
+    <p class="lede">
+      <strong>Headphones recommended.</strong> All audio is loudness-normalized to &minus;23 LUFS.
+      The input is the FX-normalized mix; each method predicts an FX chain that should bridge it to the target.
+      Click <span class="kbd">Show FX Chain</span> to inspect the predicted signal chain, and hover any effect block for its parameters.
+    </p>
+    <div class="legend">
+      <span class="fx-block eq">EQ</span>
+      <span class="fx-block dynamics">Dynamics</span>
+      <span class="fx-block distortion">Distortion</span>
+      <span class="fx-block modulation">Modulation</span>
+      <span class="fx-block delay">Delay</span>
+      <span class="fx-block reverb">Reverb</span>
+      <span class="fx-block stereo">Stereo</span>
+      <span class="fx-block spectral">Spectral</span>
+      <span class="fx-block other">Other</span>
+    </div>
+    <div class="grid2" id="paired-grid"></div>
+  </section>
+
+  <!-- Unpaired -->
+  <section id="unpaired">
+    <h2><span class="num">05</span> Unpaired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— different content</span></h2>
+    <div class="rule"></div>
+    <p class="lede">
+      Cross-song transfer on MUSDB18, shown in both directions (A&rarr;B and B&rarr;A). The mixing style of the target
+      song is applied to a different song's content, so no ground-truth reference exists — judge by whether the output
+      inherits the target's sonic character while keeping the original's musical content.
+    </p>
+    <div id="unpaired-grid"></div>
+  </section>
+
+  <!-- Citation -->
+  <section id="cite">
+    <h2><span class="num">06</span> Citation</h2>
+    <div class="rule"></div>
+    <div class="cite">@inproceedings{cheng2026stemfx,
+  title     = {{StemFX}: Learning Mixing Style Representations via Autoregressive
+               {FX} Chain Prediction on Source-Separated Stems},
+  author    = {Cheng, Yuan-Chiao and Wu, Jui-Te and Chen, Brian and
+               Yeh, Yen-Tung and Chen, Yu-Hua and Yang, Yi-Hsuan},
+  booktitle = {Proceedings of the 27th International Society for Music
+               Information Retrieval Conference (ISMIR)},
+  address   = {Abu Dhabi, UAE},
+  year      = {2026}
+}</div>
+  </section>
 </div>
 
-<h2>1. Paired Style Transfer (Same Content, Different Mix)</h2>
-<div class="note">
-  <b>Target</b> = target mix &nbsp;|&nbsp;
-  <b>FX-normalized</b> = input &nbsp;|&nbsp;
-  <b>StemFX</b> = ours &nbsp;|&nbsp;
-  <b>StemFX forced</b> = ours, fixed chain &nbsp;|&nbsp;
-  <b>ITO + AFx-Rep</b> / <b>ITO + BSFiLM</b> = CMA-ES baselines
-</div>
-<div class="grid2" id="paired-grid"></div>
-
-<h2>2. Unpaired Style Transfer (Different Content)</h2>
-<div class="note">
-  Cross-song transfer, bidirectional (A&rarr;B and B&rarr;A).
-  <b>StemFX</b> = ours &nbsp;|&nbsp;
-  <b>ITO + AFx-Rep</b> / <b>ITO + BSFiLM</b> = baselines.
-</div>
-<div id="unpaired-grid"></div>
-
-<div class="footer">Submitted to ISMIR 2026. Audio samples for review purposes only.</div>
+<footer>
+  <div class="wrap">
+    Published at ISMIR 2026, Abu Dhabi, UAE. &nbsp;·&nbsp;
+    <a href="https://github.com/barry-mir/stemfx" target="_blank" rel="noopener">Code</a> &nbsp;·&nbsp;
+    <a href="https://github.com/barry-mir/multiafx" target="_blank" rel="noopener">MultiAFx</a>
+    <br>
+    Audio examples are derived from MUSDB18 and are provided for research demonstration purposes only.
+  </div>
+</footer>
 
 <script>
-// Tooltip positioning: show above cursor, clamped to viewport
+// ---------- Tooltip (delegated, viewport-clamped) ----------
 document.addEventListener("mouseenter", function(e) {
-  const block = e.target.closest(".fx-block");
+  const block = e.target.closest?.(".fx-block");
   if (!block) return;
   const tip = block.querySelector(".fx-tooltip");
   if (!tip) return;
   tip.style.display = "block";
   const rect = block.getBoundingClientRect();
-  // Position above the block
-  let top = rect.top - tip.offsetHeight - 6;
+  let top = rect.top - tip.offsetHeight - 8;
   let left = rect.left;
-  // Clamp to viewport
-  if (top < 4) top = rect.bottom + 6; // flip below if no room above
+  if (top < 4) top = rect.bottom + 8;
   if (left + tip.offsetWidth > window.innerWidth - 8) left = window.innerWidth - tip.offsetWidth - 8;
   if (left < 4) left = 4;
   tip.style.top = top + "px";
@@ -136,59 +439,59 @@ document.addEventListener("mouseenter", function(e) {
 }, true);
 
 document.addEventListener("mouseleave", function(e) {
-  const block = e.target.closest(".fx-block");
+  const block = e.target.closest?.(".fx-block");
   if (!block) return;
   const tip = block.querySelector(".fx-tooltip");
   if (tip) tip.style.display = "none";
 }, true);
 
+// ---------- Config ----------
 const N_PAIRED = 10;
 const METHODS = [
-  {key: "stemfx_free", label: "StemFX", chainFile: "chain_stemfx_free.json"},
+  {key: "stemfx_free",   label: "StemFX",        chainFile: "chain_stemfx_free.json"},
   {key: "stemfx_forced", label: "StemFX forced", chainFile: "chain_stemfx_forced.json"},
-  {key: "ito_afxrep", label: "ITO + AFx-Rep", chainFile: "chain_ito_afxrep.json"},
-  {key: "ito_bsfilm", label: "ITO + BSFiLM", chainFile: "chain_ito_bsfilm.json"},
+  {key: "ito_afxrep",    label: "ITO + AFx-Rep", chainFile: "chain_ito_afxrep.json"},
+  {key: "ito_bsfilm",    label: "ITO + BSFiLM",  chainFile: "chain_ito_bsfilm.json"},
 ];
 const STEMS = ["vocals", "bass", "drums", "other"];
-const CAT_MAP = {
-  "EQ": "eq", "DYNAMICS": "dynamics", "DISTORTION": "distortion", "MODULATION": "modulation",
-  "DELAY": "delay", "REVERB": "reverb", "STEREO": "stereo", "SPECTRAL": "spectral",
-  "NOISE": "noise", "PITCH": "pitch", "TIME": "time", "OTHER": "other",
-};
-// Simplified category lookup from effect name prefix
-const FX_CATEGORIES = {};
-// We'll populate from loaded chain data dynamically; fallback to "other"
 
+// file, label, row-class ("ref" = reference audio, "hl" = ours)
 const pairedAudio = [
-  ["target.mp3", "Target"],
-  ["original.mp3", "FX-normalized"],
-  ["stemfx_free.mp3", "StemFX"],
-  ["stemfx_forced.mp3", "StemFX forced"],
-  ["ito_afxrep.mp3", "ITO + AFx-Rep"],
-  ["ito_bsfilm.mp3", "ITO + BSFiLM"],
-];
-
-const unpairedPairs = [
-  {id:1, fwd:"01_Grants_-_PunchDrunk__to__North_To_Alaska_-_All_The_Same",
-         inv:"02_North_To_Alaska_-_All_The_Same__to__Grants_-_PunchDrunk"},
-  {id:2, fwd:"03_Clara_Berry_And_Wooldog_-_Waltz_For_My_Victims__to__Music_Delta_-_80s_Rock",
-         inv:"04_Music_Delta_-_80s_Rock__to__Clara_Berry_And_Wooldog_-_Waltz_For_My_Victims"},
-  {id:3, fwd:"05_Music_Delta_-_Beatles__to__James_May_-_Dont_Let_Go",
-         inv:"06_James_May_-_Dont_Let_Go__to__Music_Delta_-_Beatles"},
-  {id:4, fwd:"07_Clara_Berry_And_Wooldog_-_Stella__to__Black_Bloc_-_If_You_Want_Success",
-         inv:"08_Black_Bloc_-_If_You_Want_Success__to__Clara_Berry_And_Wooldog_-_Stella"},
-  {id:5, fwd:"09_Snowmine_-_Curfews__to__Alexander_Ross_-_Goodbye_Bolero",
-         inv:"10_Alexander_Ross_-_Goodbye_Bolero__to__Snowmine_-_Curfews"},
+  ["target.mp3",        "Target",         "ref"],
+  ["original.mp3",      "FX-normalized",  "ref"],
+  ["stemfx_free.mp3",   "StemFX (ours)",  "hl"],
+  ["stemfx_forced.mp3", "StemFX forced",  ""],
+  ["ito_afxrep.mp3",    "ITO + AFx-Rep",  ""],
+  ["ito_bsfilm.mp3",    "ITO + BSFiLM",   ""],
 ];
 
 const unpairedAudio = [
-  ["original.mp3", "Original"],
-  ["target.mp3", "Target"],
-  ["stemfx_free.mp3", "StemFX"],
-  ["ito_afxrep.mp3", "ITO+AFx-Rep"],
-  ["ito_bsfilm.mp3", "ITO+BSFiLM"],
+  ["original.mp3",      "Original",       "ref"],
+  ["target.mp3",        "Style target",   "ref"],
+  ["stemfx_free.mp3",   "StemFX (ours)",  "hl"],
+  ["ito_afxrep.mp3",    "ITO + AFx-Rep",  ""],
+  ["ito_bsfilm.mp3",    "ITO + BSFiLM",   ""],
 ];
 
+const unpairedPairs = [
+  {id:1, a:"Grants — PunchDrunk", b:"North To Alaska — All The Same",
+         fwd:"01_Grants_-_PunchDrunk__to__North_To_Alaska_-_All_The_Same",
+         inv:"02_North_To_Alaska_-_All_The_Same__to__Grants_-_PunchDrunk"},
+  {id:2, a:"Clara Berry And Wooldog — Waltz For My Victims", b:"Music Delta — 80s Rock",
+         fwd:"03_Clara_Berry_And_Wooldog_-_Waltz_For_My_Victims__to__Music_Delta_-_80s_Rock",
+         inv:"04_Music_Delta_-_80s_Rock__to__Clara_Berry_And_Wooldog_-_Waltz_For_My_Victims"},
+  {id:3, a:"Music Delta — Beatles", b:"James May — Don't Let Go",
+         fwd:"05_Music_Delta_-_Beatles__to__James_May_-_Dont_Let_Go",
+         inv:"06_James_May_-_Dont_Let_Go__to__Music_Delta_-_Beatles"},
+  {id:4, a:"Clara Berry And Wooldog — Stella", b:"Black Bloc — If You Want Success",
+         fwd:"07_Clara_Berry_And_Wooldog_-_Stella__to__Black_Bloc_-_If_You_Want_Success",
+         inv:"08_Black_Bloc_-_If_You_Want_Success__to__Clara_Berry_And_Wooldog_-_Stella"},
+  {id:5, a:"Snowmine — Curfews", b:"Alexander Ross — Goodbye Bolero",
+         fwd:"09_Snowmine_-_Curfews__to__Alexander_Ross_-_Goodbye_Bolero",
+         inv:"10_Alexander_Ross_-_Goodbye_Bolero__to__Snowmine_-_Curfews"},
+];
+
+// ---------- Chain rendering ----------
 function guessCategory(effectName) {
   const n = effectName.toLowerCase();
   if (n.includes("highpass") || n.includes("lowpass") || n.includes("bandpass") || n.includes("bandstop") ||
@@ -216,31 +519,33 @@ function fmtVal(v) {
   return String(v);
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+
 function renderChainDiagram(chainData) {
   const stems = chainData.stems || {};
-  let html = '';
+  let html = "";
   for (const sn of STEMS) {
     const chain = (stems[sn] || {}).fx_chain || [];
     html += '<div class="stem-row"><div class="stem-label">' + sn + '</div><div class="blocks">';
     if (chain.length === 0) {
       html += '<span class="no-fx">(pass-through)</span>';
     } else {
-      for (const fx of chain) {
+      chain.forEach((fx, i) => {
         const cat = guessCategory(fx.effect);
         const params = fx.params || {};
         let tip = fx.effect + "\n";
-        for (const [k, v] of Object.entries(params)) {
-          if (k.startsWith("_")) continue;
-          tip += "  " + k + ": " + fmtVal(v) + "\n";
-        }
-        if (Object.keys(params).length === 0) tip += "  (no parameters)\n";
-        // Short display name: strip prefix
-        let short = fx.effect.replace(/^(sox_|am_|ta_|sci_|lib_|pln_|npy_)/, "");
-        html += '<span class="fx-block ' + cat + '">' + short +
-                '<span class="fx-tooltip">' + tip.trim() + '</span></span>';
-      }
+        const keys = Object.keys(params).filter(k => !k.startsWith("_"));
+        for (const k of keys) tip += "  " + k + ": " + fmtVal(params[k]) + "\n";
+        if (keys.length === 0) tip += "  (no parameters)\n";
+        const short = fx.effect.replace(/^(sox_|am_|ta_|sci_|lib_|pln_|npy_)/, "");
+        if (i > 0) html += '<span class="arrow">&rarr;</span>';
+        html += '<span class="fx-block ' + cat + '">' + esc(short) +
+                '<span class="fx-tooltip">' + esc(tip.trim()) + '</span></span>';
+      });
     }
-    html += '</div></div>';
+    html += "</div></div>";
   }
   return html;
 }
@@ -250,98 +555,106 @@ function makeChainPanel(panelId, basePath) {
   html += '<div class="method-tabs" id="tabs-' + panelId + '">';
   for (const m of METHODS) {
     html += '<div class="method-tab" data-method="' + m.key + '" data-panel="' + panelId +
-            '" data-url="' + basePath + '/' + m.chainFile + '">' + m.label + '</div>';
+            '" data-url="' + basePath + "/" + m.chainFile + '">' + m.label + "</div>";
   }
-  html += '</div>';
+  html += "</div>";
   for (const m of METHODS) {
-    html += '<div class="chain-diagram" id="diag-' + panelId + '-' + m.key + '">Loading...</div>';
+    html += '<div class="chain-diagram" id="diag-' + panelId + "-" + m.key + '">Loading&hellip;</div>';
   }
-  html += '</div>';
-  return html;
+  return html + "</div>";
 }
 
-function togglePanel(panelId) {
-  const el = document.getElementById(panelId);
-  el.classList.toggle("open");
-}
-
-// Tab click handler (delegated)
+// ---------- Interaction ----------
 document.addEventListener("click", async function(e) {
+  const btn = e.target.closest(".chain-btn");
+  if (btn) {
+    const panel = document.getElementById(btn.dataset.panel);
+    const open = panel.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    btn.textContent = open ? "Hide FX Chain" : "Show FX Chain";
+    // auto-select the first method on first open
+    if (open && !panel.querySelector(".method-tab.active")) panel.querySelector(".method-tab").click();
+    return;
+  }
+
   const tab = e.target.closest(".method-tab");
   if (!tab) return;
-  const panel = tab.dataset.panel;
-  const method = tab.dataset.method;
-  const url = tab.dataset.url;
+  const panelId = tab.dataset.panel, method = tab.dataset.method, url = tab.dataset.url;
 
-  // Toggle active tab
-  document.querySelectorAll("#tabs-" + panel + " .method-tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll("#tabs-" + panelId + " .method-tab").forEach(t => t.classList.remove("active"));
   tab.classList.add("active");
+  document.querySelectorAll("#" + panelId + " .chain-diagram").forEach(d => d.classList.remove("active"));
 
-  // Hide all diagrams, show selected
-  document.querySelectorAll("#" + panel + " .chain-diagram").forEach(d => d.classList.remove("active"));
-  const diag = document.getElementById("diag-" + panel + "-" + method);
+  const diag = document.getElementById("diag-" + panelId + "-" + method);
   diag.classList.add("active");
-
-  // Load chain data if not yet loaded
   if (diag.dataset.loaded !== "1") {
     try {
       const resp = await fetch(url);
-      const data = await resp.json();
-      diag.innerHTML = renderChainDiagram(data);
+      if (!resp.ok) throw new Error(resp.status);
+      diag.innerHTML = renderChainDiagram(await resp.json());
       diag.dataset.loaded = "1";
     } catch (err) {
-      diag.innerHTML = '<span style="color:red">Failed to load chain</span>';
+      diag.innerHTML = '<span class="no-fx">Failed to load chain.</span>';
     }
   }
 });
 
+// Only one <audio> plays at a time.
+document.addEventListener("play", function(e) {
+  document.querySelectorAll("audio").forEach(a => { if (a !== e.target) a.pause(); });
+}, true);
+
+// ---------- Build ----------
 function audioTable(base, conds) {
-  let h = '<table>';
-  for (const [file, label] of conds) {
-    h += '<tr><td>' + label + '</td><td><audio controls preload="none" src="' + base + '/' + file + '"></audio></td></tr>';
+  let h = "<table>";
+  for (const [file, label, cls] of conds) {
+    h += '<tr class="' + cls + '"><td>' + label + '</td><td><audio controls preload="none" src="' +
+         base + "/" + file + '"></audio></td></tr>';
   }
-  return h + '</table>';
+  return h + "</table>";
 }
 
-// ---- Render Paired ----
-const pg = document.getElementById("paired-grid");
+function chainBtn(panelId) {
+  return '<button class="chain-btn" data-panel="' + panelId + '" aria-expanded="false">Show FX Chain</button>';
+}
+
+const pairedHtml = [];
 for (let i = 1; i <= N_PAIRED; i++) {
   const id = String(i).padStart(2, "0");
   const base = "audio/paired/" + id;
   const panelId = "chain-paired-" + id;
-  pg.innerHTML += '<div class="card">' +
-    '<div class="card-header"><span class="card-title">Example ' + i + '</span>' +
-    '<button class="chain-btn" onclick="togglePanel(\'' + panelId + '\')">Show FX Chain</button></div>' +
-    audioTable(base, pairedAudio) +
-    makeChainPanel(panelId, base) +
-    '</div>';
+  pairedHtml.push(
+    '<div class="card">' +
+      '<div class="card-header"><span class="card-title">Example ' + i + "</span>" + chainBtn(panelId) + "</div>" +
+      audioTable(base, pairedAudio) +
+      makeChainPanel(panelId, base) +
+    "</div>"
+  );
 }
+document.getElementById("paired-grid").innerHTML = pairedHtml.join("");
 
-// ---- Render Unpaired ----
-const ug = document.getElementById("unpaired-grid");
+const unpairedHtml = [];
 for (const p of unpairedPairs) {
-  const fBase = "audio/unpaired/" + p.fwd;
-  const iBase = "audio/unpaired/" + p.inv;
-  const fpId = "chain-unpaired-" + p.id + "f";
-  const ipId = "chain-unpaired-" + p.id + "i";
-
-  ug.innerHTML += '<div class="pair-row">' +
-    '<div class="pair-row-header"><span class="pair-row-title">Pair ' + p.id + '</span></div>' +
-    '<div class="directions">' +
-    '<div class="dir-block">' +
-      '<div class="dir-header"><span class="dir-label">A &rarr; B</span>' +
-      '<button class="chain-btn" onclick="togglePanel(\'' + fpId + '\')">Show FX Chain</button></div>' +
-      audioTable(fBase, unpairedAudio) +
-      makeChainPanel(fpId, fBase) +
-    '</div>' +
-    '<div class="dir-block">' +
-      '<div class="dir-header"><span class="dir-label">B &rarr; A</span>' +
-      '<button class="chain-btn" onclick="togglePanel(\'' + ipId + '\')">Show FX Chain</button></div>' +
-      audioTable(iBase, unpairedAudio) +
-      makeChainPanel(ipId, iBase) +
-    '</div>' +
-    '</div></div>';
+  const fBase = "audio/unpaired/" + p.fwd, iBase = "audio/unpaired/" + p.inv;
+  const fpId = "chain-unpaired-" + p.id + "f", ipId = "chain-unpaired-" + p.id + "i";
+  unpairedHtml.push(
+    '<div class="pair-row">' +
+      '<div class="pair-row-header"><span class="pair-row-title">Pair ' + p.id +
+        ' <span class="song">A: ' + esc(p.a) + " &nbsp;·&nbsp; B: " + esc(p.b) + "</span></span></div>" +
+      '<div class="directions">' +
+        '<div class="dir-block">' +
+          '<div class="dir-header"><span class="dir-label">A &rarr; B</span>' + chainBtn(fpId) + "</div>" +
+          audioTable(fBase, unpairedAudio) + makeChainPanel(fpId, fBase) +
+        "</div>" +
+        '<div class="dir-block">' +
+          '<div class="dir-header"><span class="dir-label">B &rarr; A</span>' + chainBtn(ipId) + "</div>" +
+          audioTable(iBase, unpairedAudio) + makeChainPanel(ipId, iBase) +
+        "</div>" +
+      "</div>" +
+    "</div>"
+  );
 }
+document.getElementById("unpaired-grid").innerHTML = unpairedHtml.join("");
 </script>
 </body>
 </html>

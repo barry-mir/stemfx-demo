@@ -1,2 +1,5 @@
 .DS_Store
 *.pyc
+
+# paper source — not distributed with the demo
+main.pdf
