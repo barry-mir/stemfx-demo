@@ -116,22 +116,32 @@
     border-collapse: collapse; font-size: .9rem; background: var(--bg-card);
   }
   table.results th, table.results td {
-    padding: 10px 14px; text-align: center; white-space: nowrap;
+    padding: 9px 14px; text-align: center; white-space: nowrap;
     border-right: 1px solid var(--border);
   }
   table.results th:last-child, table.results td:last-child { border-right: 0; }
   /* Method names read as labels, so keep them flush left; numbers center under their headers. */
-  table.results th:first-child, table.results td:first-child { text-align: left; width: 32%; }
+  table.results th:first-child, table.results td:first-child { text-align: left; width: 26%; }
   table.results tbody td:not(:first-child) { font-variant-numeric: tabular-nums; }
+
   table.results thead th {
     font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
-    color: var(--text-faint); background: var(--bg-soft); border-bottom: 1px solid var(--border);
-    font-weight: 700;
+    color: var(--text-faint); background: var(--bg-soft); font-weight: 700;
+    /* Bottom-align so METHOD/TIME sit on the same baseline as the metric row. */
+    vertical-align: bottom;
   }
-  table.results thead tr:first-child th { border-bottom: 1px solid var(--border); }
+  /* Group labels span their metrics; the rule under them marks the span. */
+  table.results thead th.group { border-bottom: 1px solid var(--border); font-size: .7rem; padding-bottom: 5px; }
+  table.results thead th.spacer { border-right: 0; background: var(--bg-soft); }
+  table.results thead tr:last-child th { border-bottom: 2px solid var(--border-strong); padding-top: 4px; }
+
   table.results tbody td { border-bottom: 1px solid var(--border); color: var(--text-soft); }
+  table.results tbody tr:last-child td { border-bottom: 0; }
   table.results tbody tr.ours td { background: var(--accent-soft); color: var(--text); font-weight: 650; }
   table.results tbody tr.anchor td { color: var(--text-faint); font-style: italic; }
+  /* Anchors are references, not competing methods — set them off.
+     2px so it wins the border-collapse tie against the row above. */
+  table.results tbody tr.anchor-first td { border-top: 2px solid var(--border-strong); }
   .tbl-note { font-size: .8rem; color: var(--text-faint); margin-top: 8px; }
 
   /* ---------- Audio grids ---------- */
@@ -310,15 +320,17 @@
       <table class="results">
         <thead>
           <tr>
-            <th rowspan="2">Method</th>
-            <th>Synth.</th>
-            <th colspan="2">Real Mix</th>
-            <th rowspan="2">Time</th>
+            <th class="spacer"></th>
+            <th class="group">Synth.</th>
+            <th class="group" colspan="2">Real Mix</th>
+            <th class="spacer"></th>
           </tr>
           <tr>
+            <th>Method</th>
             <th>MRSTFT ↓</th>
             <th>MRSTFT ↓</th>
             <th>MUSHRA ↑</th>
+            <th>Time</th>
           </tr>
         </thead>
         <tbody>
@@ -326,7 +338,7 @@
           <tr><td>StemFX forced</td><td>3.12</td><td>2.10</td><td>25.3</td><td>1.91 s</td></tr>
           <tr><td>ITO + AFx-Rep</td><td>3.71</td><td>2.53</td><td>30.6</td><td>1033 s</td></tr>
           <tr><td>ITO + BSFiLM</td><td>2.89</td><td>2.06</td><td>19.9</td><td>1717 s</td></tr>
-          <tr class="anchor"><td>Target mix (high anchor)</td><td>0.00</td><td>0.00</td><td>96.6</td><td>—</td></tr>
+          <tr class="anchor anchor-first"><td>Target mix (high anchor)</td><td>0.00</td><td>0.00</td><td>96.6</td><td>—</td></tr>
           <tr class="anchor"><td>FX-normalized (low anchor)</td><td>3.38</td><td>1.49</td><td>54.9</td><td>—</td></tr>
         </tbody>
       </table>
