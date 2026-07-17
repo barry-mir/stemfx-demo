@@ -111,14 +111,24 @@
 
   /* Results table */
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-  table.results { width: 100%; border-collapse: collapse; font-size: .9rem; background: var(--bg-card); }
-  table.results th, table.results td { padding: 10px 14px; text-align: right; white-space: nowrap; }
-  table.results th:first-child, table.results td:first-child { text-align: left; }
+  table.results {
+    width: 100%; min-width: 620px; table-layout: fixed;
+    border-collapse: collapse; font-size: .9rem; background: var(--bg-card);
+  }
+  table.results th, table.results td {
+    padding: 10px 14px; text-align: center; white-space: nowrap;
+    border-right: 1px solid var(--border);
+  }
+  table.results th:last-child, table.results td:last-child { border-right: 0; }
+  /* Method names read as labels, so keep them flush left; numbers center under their headers. */
+  table.results th:first-child, table.results td:first-child { text-align: left; width: 32%; }
+  table.results tbody td:not(:first-child) { font-variant-numeric: tabular-nums; }
   table.results thead th {
     font-size: .75rem; text-transform: uppercase; letter-spacing: .05em;
     color: var(--text-faint); background: var(--bg-soft); border-bottom: 1px solid var(--border);
     font-weight: 700;
   }
+  table.results thead tr:first-child th { border-bottom: 1px solid var(--border); }
   table.results tbody td { border-bottom: 1px solid var(--border); color: var(--text-soft); }
   table.results tbody tr.ours td { background: var(--accent-soft); color: var(--text); font-weight: 650; }
   table.results tbody tr.anchor td { color: var(--text-faint); font-style: italic; }
