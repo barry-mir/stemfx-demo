@@ -109,6 +109,18 @@
   code, .kbd { font-family: var(--mono); font-size: .87em; background: var(--bg-soft);
     border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
 
+  /* Figures — paper figures are drawn on white, so keep a white plate in both themes. */
+  figure.paper-fig {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: #fff; box-shadow: var(--shadow); overflow: hidden;
+  }
+  figure.paper-fig img { display: block; width: 100%; height: auto; padding: 18px 20px; }
+  figure.paper-fig figcaption {
+    font-size: .82rem; color: var(--text-soft); line-height: 1.55;
+    padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg-soft);
+  }
+  figure.paper-fig figcaption b { color: var(--text); font-weight: 700; }
+
   /* Results table */
   .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
   table.results {
@@ -308,9 +320,40 @@
     </div>
   </section>
 
+  <!-- System overview -->
+  <section id="overview">
+    <h2><span class="num">02</span> System overview</h2>
+    <div class="rule"></div>
+    <figure class="paper-fig">
+      <img src="figures/system_overview.png" alt="StemFX system overview: original and augmented stems pass through a shared BSFiLM Encoder, whose projected embeddings condition a Transformer FX Chain Generator via cross-attention.">
+      <figcaption>
+        <b>Figure 1.</b> StemFX system overview. Original and target stems pass through the shared BSFiLM Encoder
+        (band-split multi-band CNN with FiLM conditioning) to produce embeddings, which are projected into conditioning
+        vectors <b>m</b><sub>1</sub>, <b>m</b><sub>2</sub> that the Transformer decoder attends to via cross-attention.
+        The FX Chain Generator is trained with teacher forcing: ground-truth tokens are fed as input at each step, and
+        cross-entropy loss is computed against the next ground-truth token.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Retrieval -->
+  <section id="retrieval">
+    <h2><span class="num">03</span> Mixing style retrieval</h2>
+    <div class="rule"></div>
+    <figure class="paper-fig">
+      <img src="figures/retrieval.png" alt="Retrieval performance vs. number of applied effects. StemFX leads all baselines on Top-1, Top-5, Top-10 accuracy and MRR across chain lengths 1 to 8.">
+      <figcaption>
+        <b>Figure 2.</b> Mixing style retrieval performance vs. number of applied effects: Top-1, Top-5, Top-10 accuracy
+        (%) and Mean Reciprocal Rank (MRR). StemFX outperforms all baselines across all chain lengths and metrics,
+        including BSFiLM-CL (same architecture and data, contrastive training). Numbers in parentheses denote the number
+        of effects each model was trained with.
+      </figcaption>
+    </figure>
+  </section>
+
   <!-- Results -->
   <section id="results">
-    <h2><span class="num">02</span> Paired mixing style transfer results</h2>
+    <h2><span class="num">04</span> Paired mixing style transfer results</h2>
     <div class="rule"></div>
     <p class="lede">
       MUSHRA score is the mean rating from 20 listeners on a 0–100 similarity scale, collected on the Real Mix set.
@@ -344,14 +387,13 @@
       </table>
     </div>
     <p class="tbl-note">
-      On mixing style retrieval, StemFX reaches 86.8% Top-1 and 0.903 MRR at 8 effects, versus 38.0% Top-1 and 0.459 MRR
-      for Fx-Encoder++. See the paper for the full retrieval, ablation, and dataset-scale results.
+      See the paper for the ablation and dataset-scale results.
     </p>
   </section>
 
   <!-- Paired -->
   <section id="paired">
-    <h2><span class="num">03</span> Paired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— same content, different mix</span></h2>
+    <h2><span class="num">05</span> Paired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— same content, different mix</span></h2>
     <div class="rule"></div>
     <p class="lede">
       <strong>Headphones recommended.</strong> All audio is loudness-normalized to &minus;23 LUFS.
@@ -374,7 +416,7 @@
 
   <!-- Unpaired -->
   <section id="unpaired">
-    <h2><span class="num">04</span> Unpaired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— different content</span></h2>
+    <h2><span class="num">06</span> Unpaired style transfer <span style="font-weight:500;color:var(--text-faint);font-size:.9rem">— different content</span></h2>
     <div class="rule"></div>
     <p class="lede">
       Cross-song transfer on MUSDB18, shown in both directions (A&rarr;B and B&rarr;A). The mixing style of the target
@@ -386,7 +428,7 @@
 
   <!-- Citation -->
   <section id="cite">
-    <h2><span class="num">05</span> Citation</h2>
+    <h2><span class="num">07</span> Citation</h2>
     <div class="rule"></div>
     <div class="cite">@inproceedings{cheng2026stemfx,
   title     = {{StemFX}: Learning Mixing Style Representations via Autoregressive
